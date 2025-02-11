@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>City Finder</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,36 +51,46 @@
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 4px;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background: #e9e9e9;
         }
         .history-item p {
             margin: 5px 0;
         }
-        input[type="text"]::-webkit-calendar-picker-indicator {
-            display: none !important;
+        .suggestions {
+            border: 1px solid #ddd;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            background: white;
+            width: 100%;
+            display: none;
+            z-index: 1000;
+        }
+        .suggestion-item {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background: #f0f0f0;
         }
     </style>
 </head>
 <body>
     <h1>Find Nearest City</h1>
-    <form method="POST" action="/find">
+    <form id="cityForm" method="POST" action="/find">
         <div class="form-group">
             <label for="anchor_city">Anchor City:</label>
             <input type="text" 
                    id="anchor_city" 
                    name="anchor_city" 
-                   list="city-list" 
                    required 
                    autocomplete="off"
                    value="{{ request.form['anchor_city'] if request.form['anchor_city'] }}"
                    placeholder="Start typing to see suggestions...">
-            <datalist id="city-list">
-                {% if search_history %}
-                    {% for item in search_history %}
-                        <option value="{{ item.anchor_city }}">
-                        <option value="{{ item.closest_city }}">
-                    {% endfor %}
-                {% endif %}
-            </datalist>
+            <div id="citySuggestions" class="suggestions"></div>
         </div>
         <div class="form-group">
             <label for="radius">Maximum Radius (miles):</label>
@@ -92,46 +103,13 @@
         <button type="submit">Find Shortest Drive</button>
     </form>
 
-    {% if result %}
-    <div id="result">
-        <h2>Results</h2>
-        <p>Closest city to {{ result.anchor_city }}: <strong>{{ result.closest_city }}</strong></p>
-        <p>Driving distance: <strong>{{ "%.2f"|format(result.distance) }} miles</strong></p>
-        <div id="map"></div>
-    </div>
-    <script>
-        function initMap() {
-            const directionsService = new google.maps.DirectionsService();
-            const directionsRenderer = new google.maps.DirectionsRenderer();
-            const map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 7,
-                center: { lat: {{ result.start_location.lat }}, lng: {{ result.start_location.lng }} }
-            });
-            directionsRenderer.setMap(map);
-
-            const request = {
-                origin: "{{ result.anchor_city }}",
-                destination: "{{ result.closest_city }}",
-                travelMode: google.maps.TravelMode.DRIVING
-            };
-
-            directionsService.route(request, function(response, status) {
-                if (status === "OK") {
-                    directionsRenderer.setDirections(response);
-                }
-            });
-        }
-    </script>
-    <script async
-        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap">
-    </script>
-    {% endif %}
+    <div id="result"></div>
 
     {% if search_history %}
     <div class="history-section">
         <h2>Recent Searches</h2>
         {% for item in search_history %}
-        <div class="history-item">
+        <div class="history-item" onclick="loadSearch('{{ item.anchor_city }}', {{ item.radius }}, '{{ item.searched_cities }}')">
             <p><strong>From:</strong> {{ item.anchor_city }}</p>
             <p><strong>To:</strong> {{ item.closest_city }}</p>
             <p><strong>Distance:</strong> {{ "%.2f"|format(item.driving_distance) }} miles</p>
@@ -141,5 +119,109 @@
         {% endfor %}
     </div>
     {% endif %}
+
+    <script>
+        let map;
+        let directionsService;
+        let directionsRenderer;
+
+        function initMap() {
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 7,
+                center: { lat: 37.7749, lng: -122.4194 } // Default to SF
+            });
+            directionsRenderer.setMap(map);
+        }
+
+        function loadSearch(anchorCity, radius, cities) {
+            $('#anchor_city').val(anchorCity);
+            $('#radius').val(radius);
+            $('#cities').val(cities.replace(/,/g, '\n'));
+        }
+
+        function updateCitySuggestions(inputValue) {
+            const suggestions = Array.from(new Set([...pastCities])).filter(city => 
+                city.toLowerCase().includes(inputValue.toLowerCase())
+            );
+
+            const suggestionDiv = $('#citySuggestions');
+            if (suggestions.length > 0 && inputValue.length > 0) {
+                suggestionDiv.html(suggestions.map(city => 
+                    `<div class="suggestion-item" onclick="selectCity('${city}')">${city}</div>`
+                ).join(''));
+                suggestionDiv.show();
+            } else {
+                suggestionDiv.hide();
+            }
+        }
+
+        function selectCity(city) {
+            $('#anchor_city').val(city);
+            $('#citySuggestions').hide();
+        }
+
+        const pastCities = [
+            {% if search_history %}
+                {% for item in search_history %}
+                    "{{ item.anchor_city }}", "{{ item.closest_city }}",
+                {% endfor %}
+            {% endif %}
+        ];
+
+        $(document).ready(function() {
+            $('#anchor_city').on('input', function() {
+                updateCitySuggestions($(this).val());
+            });
+
+            $(document).click(function(e) {
+                if (!$(e.target).closest('#anchor_city, #citySuggestions').length) {
+                    $('#citySuggestions').hide();
+                }
+            });
+
+            $('#cityForm').on('submit', function(e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: '/find',
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $('#result').html(`
+                            <h2>Results</h2>
+                            <p>Closest city to ${response.anchor_city}: <strong>${response.closest_city}</strong></p>
+                            <p>Driving distance: <strong>${response.distance.toFixed(2)} miles</strong></p>
+                            <div id="map"></div>
+                        `);
+
+                        // Initialize map and show route
+                        initMap();
+                        const request = {
+                            origin: response.anchor_city,
+                            destination: response.closest_city,
+                            travelMode: google.maps.TravelMode.DRIVING
+                        };
+
+                        directionsService.route(request, function(response, status) {
+                            if (status === "OK") {
+                                directionsRenderer.setDirections(response);
+                            }
+                        });
+
+                        // Reload history section
+                        location.reload();
+                    },
+                    error: function(xhr) {
+                        alert('Error: ' + xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+    <script async
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap">
+    </script>
 </body>
 </html>

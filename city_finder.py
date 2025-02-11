@@ -175,6 +175,16 @@ def find():
         db.session.add(search_history)
         db.session.commit()
 
+        # If it's an AJAX request, return JSON
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'anchor_city': anchor_city.title(),
+                'closest_city': closest_city.title(),
+                'distance': distance,
+                'start_location': start_location
+            })
+
+        # For regular form submission, return HTML
         result = {
             'anchor_city': anchor_city.title(),
             'closest_city': closest_city.title(),
@@ -188,6 +198,8 @@ def find():
                             search_history=SearchHistory.query.order_by(SearchHistory.created_at.desc()).limit(5).all())
 
     except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return str(e), 400
         return f"Error: {str(e)}", 400
 
 @app.route('/api/history', methods=['GET'])
