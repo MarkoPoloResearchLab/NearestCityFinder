@@ -137,7 +137,9 @@ def find_closest_city(
 def index():
     """Render the main page with search history."""
     search_history = SearchHistory.query.order_by(SearchHistory.created_at.desc()).limit(5).all()
-    return render_template('index.html', search_history=search_history)
+    return render_template('index.html', 
+                         search_history=search_history,
+                         google_maps_api_key=GOOGLE_MAPS_API_KEY)
 
 @app.route('/find', methods=['POST'])
 def find():
@@ -181,7 +183,8 @@ def find():
                 'anchor_city': anchor_city.title(),
                 'closest_city': closest_city.title(),
                 'distance': distance,
-                'start_location': start_location
+                'start_location': start_location,
+                'google_maps_api_key': GOOGLE_MAPS_API_KEY
             })
 
         # For regular form submission, return HTML
@@ -191,7 +194,6 @@ def find():
             'distance': distance,
             'start_location': start_location
         }
-
         return render_template('index.html',
                             result=result,
                             google_maps_api_key=GOOGLE_MAPS_API_KEY,

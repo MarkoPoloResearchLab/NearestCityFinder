@@ -1,0 +1,16 @@
+Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading
+Google Maps JavaScript API warning: NoApiKeys https://developers.google.com/maps/documentation/javascript/error-messages#no-api-keys
+Google Maps JavaScript API warning: InvalidKey https://developers.google.com/maps/documentation/javascript/error-messages#invalid-key
+Google Maps JavaScript API error: ApiProjectMapError
+https://developers.google.com/maps/documentation/javascript/error-messages#api-project-map-error
+https://developers.google.com/maps/documentation/javascript/error-messages#api-project-map-error
+at t.value (https://e483ab81-80f0-43e6-90a3-a6a3c044c4d7-00-1etdg59pd4k3k.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://e483ab81-80f0-43e6-90a3-a6a3c044c4d7-00-1etdg59pd4k3k.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://e483ab81-80f0-43e6-90a3-a6a3c044c4d7-00-1etdg59pd4k3k.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://e483ab81-80f0-43e6-90a3-a6a3c044c4d7-00-1etdg59pd4k3k.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Directions Service: You must use an API key to authenticate each request to Google Maps Platform APIs. For additional information, please refer to http://g.co/dev/maps-no-account
+at t.value (https://e483ab81-80f0-43e6-90a3-a6a3c044c4d7-00-1etdg59pd4k3k.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://e483ab81-80f0-43e6-90a3-a6a3c044c4d7-00-1etdg59pd4k3k.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://e483ab81-80f0-43e6-90a3-a6a3c044c4d7-00-1etdg59pd4k3k.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://e483ab81-80f0-43e6-90a3-a6a3c044c4d7-00-1etdg59pd4k3k.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+DIRECTIONS_ROUTE: REQUEST_DENIED: There was an issue performing a Directions request.

@@ -127,11 +127,6 @@
         const API_KEY = '{{ google_maps_api_key }}';
 
         function initMap() {
-            if (typeof google === 'undefined') {
-                loadGoogleMapsScript();
-                return;
-            }
-
             if (!directionsService) {
                 directionsService = new google.maps.DirectionsService();
             }
@@ -147,14 +142,6 @@
                 });
                 directionsRenderer.setMap(map);
             }
-        }
-
-        function loadGoogleMapsScript() {
-            const script = document.createElement('script');
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&callback=initMap`;
-            script.async = true;
-            script.defer = true;
-            document.head.appendChild(script);
         }
 
         function loadSearch(anchorCity, radius, cities) {
@@ -193,7 +180,12 @@
         ];
 
         $(document).ready(function() {
-            loadGoogleMapsScript();
+            // Load Google Maps API
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
 
             $('#anchor_city').on('input', function() {
                 updateCitySuggestions($(this).val());
@@ -226,23 +218,17 @@
                         // Initialize map and show route
                         initMap();
 
-                        // Wait for map to be ready
-                        const waitForMap = setInterval(() => {
-                            if (typeof google !== 'undefined' && map) {
-                                clearInterval(waitForMap);
-                                const request = {
-                                    origin: response.anchor_city,
-                                    destination: response.closest_city,
-                                    travelMode: google.maps.TravelMode.DRIVING
-                                };
+                        const request = {
+                            origin: response.anchor_city,
+                            destination: response.closest_city,
+                            travelMode: google.maps.TravelMode.DRIVING
+                        };
 
-                                directionsService.route(request, function(result, status) {
-                                    if (status === "OK") {
-                                        directionsRenderer.setDirections(result);
-                                    }
-                                });
+                        directionsService.route(request, function(result, status) {
+                            if (status === "OK") {
+                                directionsRenderer.setDirections(result);
                             }
-                        }, 100);
+                        });
 
                         // Update the history section without page reload
                         $.get('/api/history', function(history) {
