@@ -3,9 +3,11 @@
 import argparse
 import sys
 import tempfile
+import os
 from typing import Dict, List, Tuple, Optional
 import googlemaps
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask_migrate import Migrate
 from config import GOOGLE_MAPS_API_KEY
 from utils import (
     read_cities_file,
@@ -13,8 +15,15 @@ from utils import (
     haversine_distance,
     get_driving_distance
 )
+from models import db, SearchHistory
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize the database and migrations
+db.init_app(app)
+migrate = Migrate(app, db)
 
 def parse_arguments() -> Optional[argparse.Namespace]:
     """Parse command line arguments."""
@@ -116,8 +125,9 @@ def find_closest_city(
 
 @app.route('/')
 def index():
-    """Render the main page."""
-    return render_template('index.html')
+    """Render the main page with search history."""
+    search_history = SearchHistory.query.order_by(SearchHistory.created_at.desc()).limit(5).all()
+    return render_template('index.html', search_history=search_history)
 
 @app.route('/find', methods=['POST'])
 def find():
@@ -144,6 +154,17 @@ def find():
             radius
         )
 
+        # Save search history to database
+        search_history = SearchHistory(
+            anchor_city=anchor_city,
+            closest_city=closest_city,
+            driving_distance=distance,
+            radius=radius,
+            searched_cities=','.join(cities)
+        )
+        db.session.add(search_history)
+        db.session.commit()
+
         result = {
             'anchor_city': anchor_city,
             'closest_city': closest_city,
@@ -151,12 +172,19 @@ def find():
             'start_location': start_location
         }
 
-        return render_template('index.html', 
-                             result=result,
-                             google_maps_api_key=GOOGLE_MAPS_API_KEY)
+        return render_template('index.html',
+                            result=result,
+                            google_maps_api_key=GOOGLE_MAPS_API_KEY,
+                            search_history=SearchHistory.query.order_by(SearchHistory.created_at.desc()).limit(5).all())
 
     except Exception as e:
         return f"Error: {str(e)}", 400
+
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    """Get search history as JSON."""
+    history = SearchHistory.query.order_by(SearchHistory.created_at.desc()).limit(10).all()
+    return jsonify([h.to_dict() for h in history])
 
 def main() -> None:
     """Main function."""
@@ -165,6 +193,8 @@ def main() -> None:
         args = parse_arguments()
 
         if args is None:  # No command line arguments, run as web app
+            with app.app_context():
+                db.create_all()  # Create tables when running as web app
             app.run(host='0.0.0.0', port=5000, debug=True)
             return
 
