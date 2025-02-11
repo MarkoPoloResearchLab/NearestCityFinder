@@ -1,3 +1,30 @@
+
+# Nearest City Finder
+
+A command-line tool and web application that finds the closest city by driving distance within a specified radius using the Google Maps API.
+
+## Features
+
+- Finds the nearest city from a list of cities based on actual driving distance
+- Filters cities by linear distance first to optimize API usage
+- Supports custom radius limits
+- Deduplicates city entries automatically
+- Shows both linear and driving distances for better comparison
+- Web interface for interactive city searching
+- Search history tracking
+- Interactive map visualization
+
+## Prerequisites
+
+- Python 3.x
+- Google Maps API key with the following APIs enabled:
+  - Geocoding API
+  - Distance Matrix API
+
+## Installation
+
+1. Clone the repository:
+```bash
 git clone https://github.com/MarkoPoloResearchLab/NearestCityFinder.git
 cd NearestCityFinder
 ```
@@ -55,3 +82,4 @@ SANTA CLARA: 36.70 miles (driving)
 Result:
 Closest city: SANTA CLARA
 Driving distance: 36.70 miles
+```
