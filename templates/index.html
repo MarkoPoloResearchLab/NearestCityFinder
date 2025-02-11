@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>City Finder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        textarea {
+            height: 150px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Find Nearest City</h1>
+    <form method="POST" action="/find">
+        <div class="form-group">
+            <label for="anchor_city">Anchor City:</label>
+            <input type="text" id="anchor_city" name="anchor_city" required>
+        </div>
+        <div class="form-group">
+            <label for="radius">Maximum Radius (miles):</label>
+            <input type="number" id="radius" name="radius" required min="1" value="300">
+        </div>
+        <div class="form-group">
+            <label for="cities">List of Cities (one per line):</label>
+            <textarea id="cities" name="cities" required></textarea>
+        </div>
+        <button type="submit">Find Nearest City</button>
+    </form>
+    {% if result %}
+    <div id="result">
+        <h2>Results</h2>
+        <p>Closest city to {{ result.anchor_city }}: <strong>{{ result.closest_city }}</strong></p>
+        <p>Driving distance: <strong>{{ "%.2f"|format(result.distance) }} miles</strong></p>
+        <div id="map"></div>
+    </div>
+    <script>
+        function initMap() {
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer();
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 7,
+                center: { lat: {{ result.start_location.lat }}, lng: {{ result.start_location.lng }} }
+            });
+            directionsRenderer.setMap(map);
+
+            const request = {
+                origin: "{{ result.anchor_city }}",
+                destination: "{{ result.closest_city }}",
+                travelMode: google.maps.TravelMode.DRIVING
+            };
+
+            directionsService.route(request, function(response, status) {
+                if (status === "OK") {
+                    directionsRenderer.setDirections(response);
+                }
+            });
+        }
+    </script>
+    <script async
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap">
+    </script>
+    {% endif %}
+</body>
+</html>
