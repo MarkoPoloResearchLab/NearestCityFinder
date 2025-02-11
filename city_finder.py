@@ -133,7 +133,7 @@ def index():
 def find():
     """Handle the form submission and find the closest city."""
     try:
-        anchor_city = request.form['anchor_city']
+        anchor_city = request.form['anchor_city'].strip()
         radius = float(request.form['radius'])
         cities_text = request.form['cities']
 
@@ -156,8 +156,8 @@ def find():
 
         # Save search history to database
         search_history = SearchHistory(
-            anchor_city=anchor_city,
-            closest_city=closest_city,
+            anchor_city=anchor_city.upper(),
+            closest_city=closest_city.upper(),
             driving_distance=distance,
             radius=radius,
             searched_cities=','.join(cities)
@@ -166,8 +166,8 @@ def find():
         db.session.commit()
 
         result = {
-            'anchor_city': anchor_city,
-            'closest_city': closest_city,
+            'anchor_city': anchor_city.upper(),
+            'closest_city': closest_city.upper(),
             'distance': distance,
             'start_location': start_location
         }
