@@ -210,8 +210,22 @@
                             }
                         });
 
-                        // Reload history section
-                        location.reload();
+                        // Update the history section without page reload
+                        $.get('/api/history', function(history) {
+                            const historyHtml = history.map(item => `
+                                <div class="history-item" onclick="loadSearch('${item.anchor_city}', ${item.radius}, '${item.searched_cities}')">
+                                    <p><strong>From:</strong> ${item.anchor_city}</p>
+                                    <p><strong>To:</strong> ${item.closest_city}</p>
+                                    <p><strong>Distance:</strong> ${item.driving_distance.toFixed(2)} miles</p>
+                                    <p><strong>Radius:</strong> ${item.radius.toFixed(2)} miles</p>
+                                    <p><strong>Date:</strong> ${new Date(item.created_at).toLocaleString()}</p>
+                                </div>
+                            `).join('');
+                            $('.history-section').html(`
+                                <h2>Recent Searches</h2>
+                                ${historyHtml}
+                            `);
+                        });
                     },
                     error: function(xhr) {
                         alert('Error: ' + xhr.responseText);
