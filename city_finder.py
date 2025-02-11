@@ -21,6 +21,16 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Add SSL and connection pool settings
+if app.config['SQLALCHEMY_DATABASE_URI']:
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "connect_args": {
+            "sslmode": "require"
+        }
+    }
+
 # Initialize the database and migrations
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -79,7 +89,7 @@ def find_closest_city(
 
         print(f"\nCalculating linear distances from {anchor_city}...")
         for city in cities:
-            if city == anchor_city:
+            if city.lower() == anchor_city.lower():
                 continue
 
             try:
@@ -156,8 +166,8 @@ def find():
 
         # Save search history to database
         search_history = SearchHistory(
-            anchor_city=anchor_city.upper(),
-            closest_city=closest_city.upper(),
+            anchor_city=anchor_city.title(),
+            closest_city=closest_city.title(),
             driving_distance=distance,
             radius=radius,
             searched_cities=','.join(cities)
@@ -166,8 +176,8 @@ def find():
         db.session.commit()
 
         result = {
-            'anchor_city': anchor_city.upper(),
-            'closest_city': closest_city.upper(),
+            'anchor_city': anchor_city.title(),
+            'closest_city': closest_city.title(),
             'distance': distance,
             'start_location': start_location
         }

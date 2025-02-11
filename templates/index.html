@@ -54,6 +54,9 @@
         .history-item p {
             margin: 5px 0;
         }
+        input[type="text"]::-webkit-calendar-picker-indicator {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -61,7 +64,14 @@
     <form method="POST" action="/find">
         <div class="form-group">
             <label for="anchor_city">Anchor City:</label>
-            <input type="text" id="anchor_city" name="anchor_city" list="city-list" required value="{{ request.form['anchor_city'] if request.form['anchor_city'] }}">
+            <input type="text" 
+                   id="anchor_city" 
+                   name="anchor_city" 
+                   list="city-list" 
+                   required 
+                   autocomplete="off"
+                   value="{{ request.form['anchor_city'] if request.form['anchor_city'] }}"
+                   placeholder="Start typing to see suggestions...">
             <datalist id="city-list">
                 {% if search_history %}
                     {% for item in search_history %}
@@ -85,7 +95,7 @@
     {% if result %}
     <div id="result">
         <h2>Results</h2>
-        <p>Closest city to {{ result.anchor_city.upper() }}: <strong>{{ result.closest_city.upper() }}</strong></p>
+        <p>Closest city to {{ result.anchor_city }}: <strong>{{ result.closest_city }}</strong></p>
         <p>Driving distance: <strong>{{ "%.2f"|format(result.distance) }} miles</strong></p>
         <div id="map"></div>
     </div>
@@ -122,8 +132,8 @@
         <h2>Recent Searches</h2>
         {% for item in search_history %}
         <div class="history-item">
-            <p><strong>From:</strong> {{ item.anchor_city.upper() }}</p>
-            <p><strong>To:</strong> {{ item.closest_city.upper() }}</p>
+            <p><strong>From:</strong> {{ item.anchor_city }}</p>
+            <p><strong>To:</strong> {{ item.closest_city }}</p>
             <p><strong>Distance:</strong> {{ "%.2f"|format(item.driving_distance) }} miles</p>
             <p><strong>Radius:</strong> {{ "%.2f"|format(item.radius) }} miles</p>
             <p><strong>Date:</strong> {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
