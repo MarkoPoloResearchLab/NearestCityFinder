@@ -1,42 +1,21 @@
-# Nearest City Finder
-
-A command-line tool that finds the closest city by driving distance within a specified radius using the Google Maps API.
-
-## Features
-
-- Finds the nearest city from a list of cities based on actual driving distance
-- Filters cities by linear distance first to optimize API usage
-- Supports custom radius limits
-- Deduplicates city entries automatically
-- Shows both linear and driving distances for better comparison
-
-## Prerequisites
-
-- Python 3.x
-- Google Maps API key with the following APIs enabled:
-  - Geocoding API
-  - Distance Matrix API
-
-## Installation
-
-1. Clone the repository:
-```bash
 git clone https://github.com/MarkoPoloResearchLab/NearestCityFinder.git
 cd NearestCityFinder
 ```
 
 2. Install dependencies:
 ```bash
-pip install googlemaps
+pip install googlemaps flask flask-sqlalchemy flask-migrate psycopg2-binary
 ```
 
-3. Set up your Google Maps API key:
+3. Set up environment variables:
 ```bash
 export GOOGLE_MAPS_API_KEY='your_api_key_here'
+export DATABASE_URL='your_postgres_database_url'
 ```
 
 ## Usage
 
+### Command Line
 ```bash
 python city_finder.py -f cities.txt -c "San Francisco" -r 300
 ```
@@ -45,6 +24,12 @@ Arguments:
 - `-f, --file`: Path to text file containing list of cities (one city per line)
 - `-c, --city`: Anchor city to measure distances from
 - `-r, --radius`: Maximum radius in miles to consider cities
+
+### Web Application
+```bash
+python city_finder.py
+```
+Then visit http://localhost:5000 in your web browser.
 
 ## Example Output
 
@@ -70,12 +55,3 @@ SANTA CLARA: 36.70 miles (driving)
 Result:
 Closest city: SANTA CLARA
 Driving distance: 36.70 miles
-```
-
-## License
-
-MIT License
-
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
