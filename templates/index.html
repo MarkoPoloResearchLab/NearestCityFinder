@@ -124,15 +124,37 @@
         let map;
         let directionsService;
         let directionsRenderer;
+        const API_KEY = '{{ google_maps_api_key }}';
 
         function initMap() {
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
-            map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 7,
-                center: { lat: 37.7749, lng: -122.4194 } // Default to SF
-            });
-            directionsRenderer.setMap(map);
+            if (typeof google === 'undefined') {
+                loadGoogleMapsScript();
+                return;
+            }
+
+            if (!directionsService) {
+                directionsService = new google.maps.DirectionsService();
+            }
+            if (!directionsRenderer) {
+                directionsRenderer = new google.maps.DirectionsRenderer();
+            }
+
+            const mapDiv = document.getElementById("map");
+            if (mapDiv) {
+                map = new google.maps.Map(mapDiv, {
+                    zoom: 7,
+                    center: { lat: 37.7749, lng: -122.4194 } // Default to SF
+                });
+                directionsRenderer.setMap(map);
+            }
+        }
+
+        function loadGoogleMapsScript() {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
         }
 
         function loadSearch(anchorCity, radius, cities) {
@@ -171,6 +193,8 @@
         ];
 
         $(document).ready(function() {
+            loadGoogleMapsScript();
+
             $('#anchor_city').on('input', function() {
                 updateCitySuggestions($(this).val());
             });
@@ -187,6 +211,9 @@
                 $.ajax({
                     url: '/find',
                     method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     data: $(this).serialize(),
                     success: function(response) {
                         $('#result').html(`
@@ -198,17 +225,24 @@
 
                         // Initialize map and show route
                         initMap();
-                        const request = {
-                            origin: response.anchor_city,
-                            destination: response.closest_city,
-                            travelMode: google.maps.TravelMode.DRIVING
-                        };
 
-                        directionsService.route(request, function(response, status) {
-                            if (status === "OK") {
-                                directionsRenderer.setDirections(response);
+                        // Wait for map to be ready
+                        const waitForMap = setInterval(() => {
+                            if (typeof google !== 'undefined' && map) {
+                                clearInterval(waitForMap);
+                                const request = {
+                                    origin: response.anchor_city,
+                                    destination: response.closest_city,
+                                    travelMode: google.maps.TravelMode.DRIVING
+                                };
+
+                                directionsService.route(request, function(result, status) {
+                                    if (status === "OK") {
+                                        directionsRenderer.setDirections(result);
+                                    }
+                                });
                             }
-                        });
+                        }, 100);
 
                         // Update the history section without page reload
                         $.get('/api/history', function(history) {
@@ -233,9 +267,6 @@
                 });
             });
         });
-    </script>
-    <script async
-        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap">
     </script>
 </body>
 </html>
